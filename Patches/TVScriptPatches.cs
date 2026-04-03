@@ -152,7 +152,7 @@ namespace BestestTVModPlugin
         [HarmonyPrefix]
         public static bool TVFinishedClip(TVScript __instance)
         {
-            if (!__instance.tvOn || GameNetworkManager.Instance.localPlayerController.isInsideFactory)
+            //if (!__instance.tvOn || GameNetworkManager.Instance.localPlayerController.isInsideFactory) //skip this code to stop skipping by 2 channels
             {
                 return false;
             }
@@ -163,6 +163,14 @@ namespace BestestTVModPlugin
             }
             WhatItDo(__instance, TVIndex);
             return false;
+        }
+
+        private static void OnVideoEnded(VideoPlayer source)
+        {
+            if (VideoManager.Videos.Count > 0 && ConfigManager.tvPlaysSequentially.Value)
+            {
+                TVIndexUp();
+            }
         }
 
         private static void WhatItDo(TVScript __instance, int TVIndex = -1)
@@ -178,6 +186,12 @@ namespace BestestTVModPlugin
                 if (ConfigManager.enableLogging.Value) { BestestTVModPlugin.Log.LogInfo(videoUrl); }
                 videoSource.url = videoUrl;
                 videoSource.source = VideoSource.Url;
+                videoSource.loopPointReached -= OnVideoEnded;
+                videoSource.loopPointReached += OnVideoEnded;
+                if (tvIsCurrentlyOn) 
+                {
+                    videoSource.Play(); 
+                }
                 videoSource.controlledAudioTrackCount = 1;
                 videoSource.audioOutputMode = VideoAudioOutputMode.AudioSource;
                 videoSource.SetTargetAudioSource(0, audioSource);
