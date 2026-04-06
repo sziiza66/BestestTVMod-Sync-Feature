@@ -1,3 +1,19 @@
+## 1.3.2
+- Fix auto-skipping to next channel when video ends.
+
+## 1.3.1
+- Fix errors when skipping channels.
+
+## 1.3.0
+- Can no longer change channels when television is off.
+- Try to fix TV screen material bug.
+
+## 1.2.8
+- Config option for whether storing the TV resets the video index back to 1; this is meant as a solution for people who join late. Thanks to dounai2333 for this [commit](https://github.com/DeathWrench/BestestTVMod/issues/6).
+
+## 1.2.7
+- Fix aspect ratio settings not working
+
 ## 1.2.6
 - Add a prompt that can be toggled, indicating when videos have been reloaded.
 - Fix some logs not being disabled when Logging was set to false.
