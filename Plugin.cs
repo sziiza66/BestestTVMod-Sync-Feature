@@ -15,7 +15,7 @@ namespace BestestTVModPlugin
     {
         public const string PLUGIN_GUID = "DeathWrench.BestestTelevisionMod";
         public const string PLUGIN_NAME = "\u200bBestestTelevisionMod";
-        public const string PLUGIN_VERSION = "1.3.1";
+        public const string PLUGIN_VERSION = "1.3.2";
         private static readonly Harmony Harmony = new Harmony(PLUGIN_GUID.ToString());
         public static ManualLogSource Log = new ManualLogSource($"​{PLUGIN_NAME}");
         private InputAction reloadVideosAction;
