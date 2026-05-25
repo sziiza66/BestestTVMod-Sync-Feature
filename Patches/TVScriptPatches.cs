@@ -37,7 +37,7 @@ namespace BestestTVModPlugin
 
         public static void ApplyRemoteState(int remoteIndex, double remoteTime, bool remoteOn, bool remotePaused)
         {
-            if (VideoManager.Videos.Count == 0) return;
+            if (!ConfigManager.enableSync.Value || VideoManager.Videos.Count == 0) return;
 
             int n = VideoManager.Videos.Count;
             int idx = ((remoteIndex % n) + n) % n;
@@ -87,7 +87,7 @@ namespace BestestTVModPlugin
 
         public static void ApplyRemoteSeek(double remoteTime)
         {
-            if (videoSource == null) return;
+            if (!ConfigManager.enableSync.Value || videoSource == null) return;
             try { videoSource.time = remoteTime; } catch { }
             if (ConfigManager.enableLogging.Value)
                 BestestTVModPlugin.Log.LogInfo($"[NetSync] ApplyRemoteSeek t={remoteTime}");
@@ -95,6 +95,7 @@ namespace BestestTVModPlugin
 
         public static void ApplyRemotePause(double remoteTime, bool remotePaused)
         {
+            if (!ConfigManager.enableSync.Value) return;
             tvIsPaused = remotePaused;
             if (videoSource == null) return;
             try { videoSource.time = remoteTime; } catch { }
@@ -127,7 +128,8 @@ namespace BestestTVModPlugin
         public static bool Update(TVScript __instance)
         {
             LastTVInstance = __instance;
-            NetSync.Tick();
+            if (ConfigManager.enableSync.Value)
+                NetSync.Tick();
 
             if (!tvIsCurrentlyOn)
             {
@@ -184,9 +186,13 @@ namespace BestestTVModPlugin
             {
                 if (ConfigManager.tvSkipsAfterOffOn.Value && HasAdvanceAuthority(__instance))
                 {
-                    int n = VideoManager.Videos.Count;
-                    if (n > 0)
-                        TVIndex = (TVIndex + 1) % n;
+                    if (HasAdvanceAuthority(__instance)) {
+                        TVIndexUp();
+                    } else {
+                        int n = VideoManager.Videos.Count;
+                        if (n > 0)
+                            TVIndex = (TVIndex + 1) % n;
+                    }
                     
                     videoSource.source = VideoSource.Url;
                     videoSource.controlledAudioTrackCount = 1;
@@ -210,13 +216,13 @@ namespace BestestTVModPlugin
             }
             return false;
         }
-        public static void TVIndexUp()
+        public static void TVIndexUp(bool do_broadcast = true)
         {
             if (VideoManager.Videos.Count > 0)
                 TVIndex = (TVIndex + 1) % VideoManager.Videos.Count;
 
             SetVideoSourceUrl();
-            if (!NetSync.IsApplyingRemote)
+            if (!NetSync.IsApplyingRemote && do_broadcast)
                 NetSync.BroadcastFullState(TVIndex, 0.0, tvIsCurrentlyOn);
         }
 
@@ -265,10 +271,9 @@ namespace BestestTVModPlugin
             lastAdvanceFrame = Time.frameCount;
 
             if (VideoManager.Videos.Count > 0
-                && ConfigManager.tvPlaysSequentially.Value
-                && HasAdvanceAuthority(__instance))
+                && ConfigManager.tvPlaysSequentially.Value)
             {
-                TVIndexUp();
+                TVIndexUp(HasAdvanceAuthority(__instance));
                 videoSource = __instance.video != null ? __instance.video : __instance.GetComponent<VideoPlayer>();
                 WhatItDo(__instance, TVIndex);
                 if (tvIsCurrentlyOn)
@@ -285,12 +290,11 @@ namespace BestestTVModPlugin
         {
             if (lastAdvanceFrame == Time.frameCount) return;
             if (LastTVInstance == null) return;
-            if (!HasAdvanceAuthority(LastTVInstance)) return;
 
             if (VideoManager.Videos.Count > 0 && ConfigManager.tvPlaysSequentially.Value)
             {
                 lastAdvanceFrame = Time.frameCount;
-                TVIndexUp();
+                TVIndexUp(HasAdvanceAuthority(LastTVInstance));
                 if (LastTVInstance != null)
                 {
                     videoSource = LastTVInstance.video != null
